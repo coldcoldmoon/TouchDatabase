@@ -1,1 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touch Features Explorer</title>
+    <!-- 引入Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px; /* 增加容器宽度以适应更多列 */
+        }
+        .feature-card {
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,.1);
+            transition: transform .2s;
+        }
+        .feature-card:hover {
+            transform: scale(1.02);
+        }
+        .feature-header {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border-radius: 8px 8px 0 0;
+        }
+        .feature-body {
+            padding: 15px;
+        }
+        table {
+            width: 100%;
+        }
+        th, td {
+            padding: 5px;
+            text-align: left;
+        }
+        th {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <div class="text-center mb-4">
+        <h1 class="display-4">Touch Features Explorer</h1>
+        <p class="lead">Search and explore touch behavior features.</p>
+    </div>
+
+    <form id="searchForm" class="mb-4">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="person" class="form-label">Person</label>
+                <input type="text" class="form-control" id="person" name="person" placeholder="Enter person ID">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="material" class="form-label">Material</label>
+                <input type="number" class="form-control" id="material" name="material" placeholder="Enter material ID">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+
+    <div id="results" class="row"></div>
+</div>
+
+<!-- 引入jQuery和Bootstrap JS -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+$(document).ready(function(){
+    $('#searchForm').on('submit', function(e){
+        e.preventDefault(); // 防止默认提交
+        
+        var person = $('#person').val();
+        var material = $('#material').val();
+
+        $.getJSON('/api/touch-features', {person: person, material: material}, function(data){
+            var resultsDiv = $('#results');
+            resultsDiv.empty(); // 清空旧数据
+            
+            if (data.length === 0) {
+                resultsDiv.append('<div class="alert alert-warning col-12" role="alert">没有找到匹配的数据。</div>');
+                return;
+            }
+
+            data.forEach(function(feature){
+                // 创建卡片并添加到结果中
+                var featureCard = $('<div>').addClass('col-xl-4 col-lg-6 col-md-8 col-sm-12 mb-8'); // 使用Bootstrap栅格类
+
+                var cardInner = $('<div>').addClass('feature-card');
+
+                // 卡片标题
+                var header = $('<div>').addClass('feature-header text-white')
+                    .append($('<h6>').text(`ID: ${feature.id}`)); // 调整标题大小
+                cardInner.append(header);
+
+                // 卡片内容 - 使用表格展示
+                var body = $('<div>').addClass('feature-body');
+                if (feature.material) { // 如果存在材料编号，则尝试加载图片
+                    var imgElement = $('<img>').attr('src', '/materials/' + feature.material + '.jpg') // 根据材料编号构造图片路径
+                                            .attr('alt', 'Material Image for ' + feature.material)
+                                            .css('width', '100%')
+                                            .css('margin-bottom', '10px');
+                    body.append(imgElement);
+                } else {
+                    body.append('<p>No image available</p>'); // 或者任何其他你希望显示的信息
+                }
+
+
+                var table = $('<table>').addClass('table table-sm table-striped');
+
+                const fieldLabels = {
+                    id: 'ID',
+                    person: '人员',
+                    material: '材料编号',
+                    material_name: '材料',
+                    trial: '试验编号',
+                    label: '标签',
+                    feature_Ts: 'Ts特征值',
+                    feature_Fs: 'Fs特征值',
+                    feature_Gs: 'Gs特征值',
+                    feature_Gs_ch1: 'Gs CH1 特征值',
+                    feature_Gs_ch2: 'Gs CH2 特征值',
+                    feature_ZCRs: 'ZCRs 特征值',
+                    feature_slopes: 'Slopes 特征值',
+                    feature_mu3s: 'Mu3s 特征值',
+                    feature_mu4s: 'Mu4s 特征值',
+                    feature_mu_frics: 'Mu Frics 特征值',
+                    feature_AVG_normal_force: '平均法向力',
+                    feature_Touch_time: '触碰时间',
+                    feature_Roughness: '粗糙度',
+                    feature_Friction_F: '摩擦力 F',
+                    feature_STD_fric: '摩擦力标准差',
+                    feature_COV_fric: '摩擦力协方差系数',
+                    feature_ZCRs_CH1: 'ZCRs CH1 特征值',
+                    feature_ZCRs_CH2: 'ZCRs CH2 特征值',
+                    feature_slopes_fric: 'Slopes Frics 特征值',
+                    feature_STD_normal: '法向力标准差',
+                    feature_COV_normal: '法向力协方差系数',
+                    feature_F_Amp: 'F Amp 特征值',
+                    feature_F_Amp_std: 'F Amp 标准差',
+                    feature_F_Amp_cov: 'F Amp 协方差系数',
+                    feature_F_max: '最大F值',
+                    feature_Press_angle: '按压角度',
+                    feature_Press_angle_std: '按压角度标准差'
+                };
+
+                Object.keys(fieldLabels).forEach(function(key){
+                    var value = feature[key] !== undefined ? feature[key] : 'N/A';
+                    var row = $('<tr>')
+                        .append($('<th>').text(fieldLabels[key]))
+                        .append($('<td>').text(value));
+                    table.append(row);
+                });
+
+                body.append(table);
+                cardInner.append(body);
+                featureCard.append(cardInner);
+                resultsDiv.append(featureCard);
+            });
+        });
+    });
+});
+</script>
+
+</body>
+</html>
